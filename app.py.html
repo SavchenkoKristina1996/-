@@ -1,0 +1,197 @@
+<html>
+<head>
+<title>app.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #808080;}
+.s3 { color: #6a8759;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+app.py</font>
+</center></td></tr></table>
+<pre><span class="s0">from </span><span class="s1">flask </span><span class="s0">import </span><span class="s1">Flask</span><span class="s0">, </span><span class="s1">request</span><span class="s0">, </span><span class="s1">render_template_string</span>
+<span class="s0">import </span><span class="s1">numpy </span><span class="s0">as </span><span class="s1">np</span>
+<span class="s0">import </span><span class="s1">joblib</span>
+<span class="s0">import </span><span class="s1">requests</span>
+
+<span class="s1">app = Flask(__name__)</span>
+
+<span class="s2"># Загрузка моделей</span>
+<span class="s1">model_modulus = joblib.load(</span><span class="s3">'model_modulus.pkl'</span><span class="s1">)</span>
+<span class="s1">model_strength = joblib.load(</span><span class="s3">'model_strength.pkl'</span><span class="s1">)</span>
+
+<span class="s1">html_template = </span><span class="s3">&quot;&quot;&quot; 
+&lt;!DOCTYPE html&gt; 
+&lt;html lang=&quot;en&quot;&gt; 
+&lt;head&gt; 
+    &lt;meta charset=&quot;UTF-8&quot;&gt; 
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt; 
+    &lt;title&gt;Предсказание свойств материала&lt;/title&gt; 
+    &lt;style&gt; 
+        body { 
+            background-color: #f0f8ff; 
+            font-family: 'Arial', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        } 
+        h1 { 
+            color: #333; 
+        } 
+        form { 
+            background-color: #ffffff; 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); 
+        } 
+        label { 
+            display: block; 
+            margin-top: 10px; 
+            color: #555; 
+        } 
+        input[type=&quot;text&quot;] { 
+            width: calc(100% - 22px); 
+            padding: 10px; 
+            margin-top: 5px; 
+            border-radius: 5px; 
+            border: 1px solid #ccc; 
+            box-sizing: border-box; 
+        } 
+        input[type=&quot;submit&quot;] { 
+            background-color: #007BFF; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            margin-top: 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: background-color 0.3s ease, transform 0.3s ease; 
+        } 
+        input[type=&quot;submit&quot;]:hover { 
+            background-color: #0056b3; 
+            transform: scale(1.05); 
+        } 
+        h2 { 
+            color: #333; 
+        } 
+    &lt;/style&gt; 
+&lt;/head&gt; 
+&lt;body&gt; 
+    &lt;form method=&quot;post&quot;&gt; 
+        &lt;h1&gt;Предсказание свойств материала&lt;/h1&gt; 
+        &lt;label for=&quot;matrix_filler_ratio&quot;&gt;Matrix Filler Ratio:&lt;/label&gt; 
+        &lt;input type=&quot;text&quot; id=&quot;matrix_filler_ratio&quot; name=&quot;matrix_filler_ratio&quot; required&gt; 
+ 
+        &lt;label for=&quot;density_kg_m3&quot;&gt;Density (kg/m³):&lt;/label&gt; 
+        &lt;input type=&quot;text&quot; id=&quot;density_kg_m3&quot; name=&quot;density_kg_m3&quot; required&gt; 
+ 
+        &lt;label for=&quot;elastic_modulus_gpa&quot;&gt;Elastic Modulus (GPa):&lt;/label&gt; 
+        &lt;input type=&quot;text&quot; id=&quot;elastic_modulus_gpa&quot; name=&quot;elastic_modulus_gpa&quot; required&gt; 
+ 
+        &lt;label for=&quot;hardener_amount_percent&quot;&gt;Hardener Amount (%):&lt;/label&gt; 
+        &lt;input type=&quot;text&quot; id=&quot;hardener_amount_percent&quot; name=&quot;hardener_amount_percent&quot; required&gt; 
+ 
+        &lt;label for=&quot;epoxy_groups_content_percent&quot;&gt;Epoxy Groups Content (%):&lt;/label&gt; 
+        &lt;input type=&quot;text&quot; id=&quot;epoxy_groups_content_percent&quot; name=&quot;epoxy_groups_content_percent&quot; required&gt; 
+ 
+        &lt;label for=&quot;flash_point_temp_c&quot;&gt;Flash Point Temp (°C):&lt;/label&gt; 
+        &lt;input type=&quot;text&quot; id=&quot;flash_point_temp_c&quot; name=&quot;flash_point_temp_c&quot; required&gt; 
+ 
+        &lt;label for=&quot;surface_density_g_m2&quot;&gt;Surface Density (g/m²):&lt;/label&gt; 
+        &lt;input type=&quot;text&quot; id=&quot;surface_density_g_m2&quot; name=&quot;surface_density_g_m2&quot; required&gt; 
+ 
+        &lt;label for=&quot;resin_consumption_g_m2&quot;&gt;Resin Consumption (g/m²):&lt;/label&gt; 
+        &lt;input type=&quot;text&quot; id=&quot;resin_consumption_g_m2&quot; name=&quot;resin_consumption_g_m2&quot; required&gt; 
+ 
+        &lt;label for=&quot;stitching_angle_deg&quot;&gt;Stitching Angle (°):&lt;/label&gt; 
+        &lt;input type=&quot;text&quot; id=&quot;stitching_angle_deg&quot; name=&quot;stitching_angle_deg&quot; required&gt; 
+ 
+        &lt;label for=&quot;stitching_step&quot;&gt;Stitching Step:&lt;/label&gt; 
+        &lt;input type=&quot;text&quot; id=&quot;stitching_step&quot; name=&quot;stitching_step&quot; required&gt; 
+ 
+        &lt;label for=&quot;stitching_density&quot;&gt;Stitching Density:&lt;/label&gt; 
+        &lt;input type=&quot;text&quot; id=&quot;stitching_density&quot; name=&quot;stitching_density&quot; required&gt; 
+ 
+        &lt;input type=&quot;submit&quot; value=&quot;Предсказать&quot;&gt; 
+ 
+        {% if prediction_modulus is not none %} 
+        &lt;h2&gt;Предсказанный модуль упругости (GPa): {{ prediction_modulus }}&lt;/h2&gt; 
+        {% endif %}         
+        {% if prediction_strength is not none %} 
+        &lt;h2&gt;Предсказанная прочность (MPa): {{ prediction_strength }}&lt;/h2&gt; 
+        {% endif %} 
+    &lt;/form&gt; 
+&lt;/body&gt; 
+&lt;/html&gt; 
+&quot;&quot;&quot;</span>
+
+<span class="s1">TELEGRAM_TOKEN = </span><span class="s3">'7532434789:AAEI2Gu-0pLxNX2x-TLDFPXUQ350Vp50mbk'</span>
+<span class="s1">TELEGRAM_CHAT_ID = </span><span class="s3">'841934109'</span>
+
+<span class="s0">def </span><span class="s1">send_telegram_message(text):</span>
+    <span class="s1">url = </span><span class="s3">f&quot;https://api.telegram.org/bot</span><span class="s0">{</span><span class="s1">TELEGRAM_TOKEN</span><span class="s0">}</span><span class="s3">/sendMessage&quot;</span>
+    <span class="s1">payload = {</span>
+        <span class="s3">'chat_id'</span><span class="s1">: TELEGRAM_CHAT_ID</span><span class="s0">,</span>
+        <span class="s3">'text'</span><span class="s1">: text</span>
+    <span class="s1">}</span>
+    <span class="s1">requests.post(url</span><span class="s0">, </span><span class="s1">data=payload)</span>
+
+<span class="s1">@app.route(</span><span class="s3">'/'</span><span class="s0">, </span><span class="s1">methods=[</span><span class="s3">'GET'</span><span class="s0">, </span><span class="s3">'POST'</span><span class="s1">])</span>
+<span class="s0">def </span><span class="s1">predict():</span>
+    <span class="s1">prediction_modulus = </span><span class="s0">None</span>
+    <span class="s1">prediction_strength = </span><span class="s0">None</span>
+    <span class="s0">if </span><span class="s1">request.method == </span><span class="s3">'POST'</span><span class="s1">:</span>
+        <span class="s2"># Получаем данные из формы</span>
+        <span class="s1">data = [</span>
+            <span class="s1">float(request.form[</span><span class="s3">'matrix_filler_ratio'</span><span class="s1">])</span><span class="s0">,</span>
+            <span class="s1">float(request.form[</span><span class="s3">'density_kg_m3'</span><span class="s1">])</span><span class="s0">,</span>
+            <span class="s1">float(request.form[</span><span class="s3">'elastic_modulus_gpa'</span><span class="s1">])</span><span class="s0">,</span>
+            <span class="s1">float(request.form[</span><span class="s3">'hardener_amount_percent'</span><span class="s1">])</span><span class="s0">,</span>
+            <span class="s1">float(request.form[</span><span class="s3">'epoxy_groups_content_percent'</span><span class="s1">])</span><span class="s0">,</span>
+            <span class="s1">float(request.form[</span><span class="s3">'flash_point_temp_c'</span><span class="s1">])</span><span class="s0">,</span>
+            <span class="s1">float(request.form[</span><span class="s3">'surface_density_g_m2'</span><span class="s1">])</span><span class="s0">,</span>
+            <span class="s1">float(request.form[</span><span class="s3">'resin_consumption_g_m2'</span><span class="s1">])</span><span class="s0">,</span>
+            <span class="s1">float(request.form[</span><span class="s3">'stitching_angle_deg'</span><span class="s1">])</span><span class="s0">,</span>
+            <span class="s1">float(request.form[</span><span class="s3">'stitching_step'</span><span class="s1">])</span><span class="s0">,</span>
+            <span class="s1">float(request.form[</span><span class="s3">'stitching_density'</span><span class="s1">])</span>
+        <span class="s1">]</span>
+
+        <span class="s2"># Преобразуем данные в формат, подходящий для модели</span>
+        <span class="s1">data = np.array(data).reshape(</span><span class="s4">1</span><span class="s0">, </span><span class="s1">-</span><span class="s4">1</span><span class="s1">)</span>
+
+        <span class="s2"># Делаем предсказания</span>
+        <span class="s1">prediction_modulus = model_modulus.predict(data)[</span><span class="s4">0</span><span class="s1">]</span>
+        <span class="s1">prediction_strength = model_strength.predict(data)[</span><span class="s4">0</span><span class="s1">]</span>
+        <span class="s2"># Формируем сообщение для отправки в Telegram</span>
+        <span class="s1">message = (</span>
+            <span class="s3">f&quot;Предсказание выполнено:</span><span class="s0">\n</span><span class="s3">&quot;</span>
+            <span class="s3">f&quot;Модуль упругости (GPa): </span><span class="s0">{</span><span class="s1">prediction_modulus</span><span class="s0">:</span><span class="s3">.2f</span><span class="s0">}\n</span><span class="s3">&quot;</span>
+            <span class="s3">f&quot;Прочность (MPa): </span><span class="s0">{</span><span class="s1">prediction_strength</span><span class="s0">:</span><span class="s3">.2f</span><span class="s0">}</span><span class="s3">&quot;</span>
+        <span class="s1">)</span>
+
+        <span class="s2"># Отправляем сообщение в Telegram</span>
+        <span class="s1">send_telegram_message(message)</span>
+
+
+    <span class="s0">return </span><span class="s1">render_template_string(html_template</span><span class="s0">, </span><span class="s1">prediction_modulus=prediction_modulus</span><span class="s0">, </span><span class="s1">prediction_strength=prediction_strength)</span>
+
+<span class="s0">if </span><span class="s1">__name__ == </span><span class="s3">'__main__'</span><span class="s1">:</span>
+    <span class="s1">app.run(debug=</span><span class="s0">True</span><span class="s1">)</span>
+
+
+
+
+
+</pre>
+</body>
+</html>
